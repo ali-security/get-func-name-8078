@@ -21,14 +21,21 @@
 
 var toString = Function.prototype.toString;
 var functionNameMatch = /\s*function(?:\s|\s*\/\*[^(?:*\/)]+\*\/\s*)*([^\s\(\/]+)/;
+var maxFunctionSourceLength = 512;
 function getFuncName(aFunc) {
   if (typeof aFunc !== 'function') {
     return null;
   }
-
   var name = '';
-  if (typeof Function.prototype.name === 'undefined' && typeof aFunc.name === 'undefined') {
+  var realFPName = Object.getOwnPropertyDescriptor(Function.prototype, 'name');
+  var realFName = Object.getOwnPropertyDescriptor(aFunc, 'name');
+  if ((typeof realFPName.name === 'undefined' || !realFPName.configurable) &&
+      (typeof aFunc.name === 'undefined' || !realFName.configurable)) {
     // Here we run a polyfill if Function does not support the `name` property and if aFunc.name is not defined
+    var functionSource = toString.call(aFunc);
+    if (functionSource.indexOf('(') > maxFunctionSourceLength) {
+      return name;
+    }
     var match = toString.call(aFunc).match(functionNameMatch);
     if (match) {
       name = match[1];
